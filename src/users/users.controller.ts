@@ -8,11 +8,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiBody,
-  ApiCreatedResponse,
+  ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
-  ApiSecurity,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
@@ -20,7 +18,12 @@ import {
 import { AuthService } from 'auth/auth.service';
 import { JwtAuthGuard } from 'auth/guard/jwt.guard';
 import { LocalAuthGuard } from 'auth/guard/local.guard';
-import { LoginUserRequest } from './dto/login-user-request';
+import {
+  ApiCurrentUser,
+  ApiLogin,
+  ApiRegister,
+  ApiUpdateUser,
+} from 'decorators/users.decorator';
 
 import { NewUserRequest } from './dto/new-user-request';
 import { UserResponse } from './dto/user-response';
@@ -34,41 +37,14 @@ export class UsersController {
     private usersService: UsersService
   ) {}
 
-  @ApiOperation({ summary: 'Existing user login' })
-  @ApiBody({
-    type: LoginUserRequest,
-    description: 'Credentials to use',
-  })
-  @ApiOkResponse({
-    type: UserResponse,
-    description: 'OK',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized',
-  })
-  @ApiUnprocessableEntityResponse({
-    description: 'Unexpected error',
-  })
+  @ApiLogin()
   @UseGuards(LocalAuthGuard)
   @Post('/users/login')
   async login(@Request() req) {
     return this.authService.login(req.user);
   }
 
-  @ApiOperation({
-    summary: 'Register a new user',
-  })
-  @ApiBody({
-    type: NewUserRequest,
-    description: 'Register a new user',
-  })
-  @ApiCreatedResponse({
-    type: UserResponse,
-    description: 'OK',
-  })
-  @ApiUnprocessableEntityResponse({
-    description: 'Unexpected error',
-  })
+  @ApiRegister()
   @Post('/users')
   async register(
     @Body() newUserRequest: NewUserRequest
@@ -78,13 +54,16 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/user')
+  @ApiBearerAuth()
+  @ApiCurrentUser()
   async get(@Request() req) {
     return req.user;
   }
 
   @UseGuards(JwtAuthGuard)
   @Put('/user')
-  @ApiSecurity('token')
+  @ApiBearerAuth()
+  @ApiUpdateUser()
   async update(@Request() req) {
     return req.user;
   }
